@@ -4,7 +4,7 @@ from sentry.web.helpers import render_to_string #@UnresolvedImport
 from sentry.interfaces import Interface #@UnresolvedImport
 
 
-class ColdFusionHttp(Interface):
+class CFMLHttp(Interface):
     score = 100
 
     # methods as defined by http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
@@ -12,50 +12,27 @@ class ColdFusionHttp(Interface):
 
     def __init__(self, url_path, method=None, form=None, url=None, query_string=None, cookies=None, 
                 sessions=None, application=None, headers=None, cgi=None, **kwargs):
-        if form is None:
-            form = {}
-
-        if method:
-            method = method.upper()
-
-            assert method in self.METHODS
 
         urlparts = urlparse.urlsplit(url_path)
-
         if not query_string:
             # define querystring from url
             query_string = urlparts.query
-
         elif query_string.startswith('?'):
             # remove '?' prefix
             query_string = query_string[1:]
 
         self.url_path = '%s://%s%s' % (urlparts.scheme, urlparts.netloc, urlparts.path)
-        self.method = method
-        self.form = form
+        
+        if method:
+            self.method = method.upper()
+            assert method in self.METHODS
+        
+        self.form = form or {}
         self.query_string = query_string
-        if application:
-            self.application = application
-        else:
-            self.application = {}
-        if url:
-            self.url = url
-        else:
-            self.url = {}
-        if sessions:
-            self.sessions = sessions
-        else:
-            self.sessions = {}
-        if cookies:
-            self.cookies = cookies
-        else:
-            self.cookies = {}
-        # if cookies were [also] included in headers we
-        # strip them out
-        if headers and 'Cookie' in headers:
-            cookies = headers.pop('Cookie')
-            if not self.cookies:
-                cookies = self.cookies
+        self.application = application or {}
+        self.url = url or {}
+        self.sessions = sessions or {}
+        self.cookies = cookies or {}
         self.headers = headers or {}
         self.cgi = cgi or {}
 
@@ -83,40 +60,17 @@ class ColdFusionHttp(Interface):
         })
 
     def to_html(self, event):
-        form = self.form
-        data_is_dict = False
-        if self.headers.get('Content-Type') == 'application/x-www-form-urlencoded':
-            try:
-                form = QueryDict(form)
-            except:
-                pass
-            else:
-                data_is_dict = True
-
-        # It's kind of silly we store this twice
-        cookies = self.cookies or self.headers.pop('Cookie', {})
-        cookies_is_dict = isinstance(cookies, dict)
-        if not cookies_is_dict:
-            try:
-                cookies = QueryDict(cookies)
-            except:
-                pass
-            else:
-                cookies_is_dict = True
-
         return render_to_string('sentry/partial/interfaces/cfmlhttp.html', {
             'event': event,
             'full_url': '?'.join(filter(bool, [self.url_path, self.query_string])),
             'url_path': self.url_path,
             'method': self.method,
             'url': self.url,
-            'form': form,
-            'data_is_dict': data_is_dict,
+            'form': self.form,
             'query_string': self.query_string,
             'application': self.application,
-        'sessions': self.sessions,
-            'cookies': cookies,
-            'cookies_is_dict': cookies_is_dict,
+            'sessions': self.sessions,
+            'cookies': self.cookies,
             'headers': self.headers,
             'cgi': self.cgi,
         })

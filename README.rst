@@ -92,5 +92,3 @@ Resources
 
 * `Bug Tracker <http://github.com/jmacul2/raven-cfml/issues>`_
 * `Code <http://github.com/jmacul2/raven-cfml>`_
-* `Mailing List <https://groups.google.com/group/getsentry>`_
-* `IRC <irc://irc.freenode.net/sentry>`_  (irc.freenode.net, #sentry)

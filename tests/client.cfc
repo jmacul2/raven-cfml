@@ -1,21 +1,8 @@
 <cfcomponent extends="mxunit.framework.TestCase">
 
-	<!--- this will run before every single test in this test case --->
-	<!---<cffunction name="setUp" returntype="void" access="public" hint="put things here that you want to run before each test">
-	</cffunction>--->
-
-	<!--- this will run after every single test in this test case --->
-	<!---<cffunction name="tearDown" returntype="void" access="public" hint="put things here that you want to run after each test">
-	</cffunction>--->
-
-        <!--- this will run once after initialization and before setUp() --->
 	<cffunction name="beforeTests" returntype="void" access="public" hint="put things here that you want to run before all tests">
 		<cfset ravenCFC = createObject("component", "lib.client")>
 	</cffunction>
-
-	<!--- this will run once after all tests have been run --->
-	<!---<cffunction name="afterTests" returntype="void" access="public" hint="put things here that you want to run after all tests">
-	</cffunction>--->
 
 	<cffunction name="testHmacSha1" returntype="void" access="public">
 		<cfset var result = ravenCFC.hmac_sha1('foo', 'bar')>
