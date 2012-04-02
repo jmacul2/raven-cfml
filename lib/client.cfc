@@ -147,7 +147,7 @@
 			var signiture = '';
 			var header = '';
 			var timeVars = getTimeVars();
-			var appStruct = '';
+			var appStruct = structNew();
 			
 			// Add global metadata
 			captureStuct['event_id'] = lcase(replace(createUUID(), '-', '', 'all'));
