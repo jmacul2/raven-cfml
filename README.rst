@@ -87,6 +87,35 @@ call to sentry for performance.
       </cfcatch>
    </cftry>
 
+Using the CFML Custom Interface in Sentry
+-----------------------------------------
+
+Included is a custom sentry interface which can be added to sentry to allow for 
+CFML sentric variable scopes in sentry logs.  (ie: application, form, url etc)
+
+Installation
+~~~~~~~~~~~~
+
+1. Add cfmlsentry to the installed django apps:
+
+::
+
+   INSTALLED_APPS = (
+      ...
+      'cfmlsentry'
+      ...
+   )
+   
+2. Reference the interface in the init of the raven client:
+
+::
+
+   <cfset ravenConfig = structNew()>
+   ...
+   <cfset ravenConfig.customHttpInterface = 'cfmlsentry.interfaces.CFMLHttp'>
+   ...
+   <cfset ravenClient = createObject('component', '[path.to.raven].lib.client').init(argumentCollection=ravenConfig)>
+                  
 Resources
 ---------
 
