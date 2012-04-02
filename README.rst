@@ -18,6 +18,7 @@ To install the source code:
 And instantiate the object:
 
 ::
+
     <cfset ravenConfig = structNew()>
     <cfset ravenConfig.publicKey = "[your_public_key]">
     <cfset ravenConfig.privateKey = "[your_private_key]">
@@ -46,6 +47,7 @@ Inside a CFML Page
 ~~~~~~~~~~~~~~~~~~
 
 ::
+
    <cftry>
       <!--- Code to execute --->
 
@@ -65,6 +67,7 @@ It maybe helpful to wrap the capture calls inside cfthread to isolate the api
 call to sentry for performance.
 
 ::
+
    <cftry>
       <!--- Code to execute --->
 
