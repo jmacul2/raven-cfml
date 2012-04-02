@@ -1,7 +1,7 @@
 raven-cfml
 ==========
 
-raven-cfml is an experimental CFML client for `Sentry <http://aboutsentry.com/>`_.
+raven-cfml is an experimental CFML client for `Sentry <https://www.getsentry.com/welcome/>`_.
 
 Installation
 ------------
@@ -56,10 +56,12 @@ Inside a CFML Page
          <cfset ravenClient.captureException(cfcatch)>
       
          <!--- Capture a message --->
-         <cfset ravenClient.captureException("This is a message.")>
+         <cfset ravenClient.captureMessage("This is a message.")>
       </cfcatch>
    </cftry>
    
+Explore the client.cfc library for all available arguments.   
+
 Threading
 ~~~~~~~~~
 
