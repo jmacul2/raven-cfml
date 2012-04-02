@@ -111,7 +111,7 @@
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i]['filename'] = exception['TagContext'][i]['TEMPLATE'];
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i]['lineno'] = exception['TagContext'][i]['LINE'];
 				if (i EQ 1) {
-					sentryException['sentry.interfaces.Stacktrace']['frames'][i]['function'] = 'column #exception['TagContext'][i]['ID']#';
+					sentryException['sentry.interfaces.Stacktrace']['frames'][i]['function'] = 'column #exception['TagContext'][i]['COLUMN']#';
 				}
 				else {
 					sentryException['sentry.interfaces.Stacktrace']['frames'][i]['function'] = exception['TagContext'][i]['ID'];
