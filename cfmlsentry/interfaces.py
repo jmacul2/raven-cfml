@@ -14,13 +14,6 @@ class CFMLHttp(Interface):
                 sessions=None, application=None, headers=None, cgi=None, **kwargs):
 
         urlparts = urlparse.urlsplit(url_path)
-        if not query_string:
-            # define querystring from url
-            query_string = urlparts.query
-        elif query_string.startswith('?'):
-            # remove '?' prefix
-            query_string = query_string[1:]
-
         self.url_path = '%s://%s%s' % (urlparts.scheme, urlparts.netloc, urlparts.path)
         
         if method:
@@ -28,7 +21,7 @@ class CFMLHttp(Interface):
             assert method in self.METHODS
         
         self.form = form or {}
-        self.query_string = query_string
+        self.query_string = cgi.get('QUERY_STRING', '')
         self.application = application or {}
         self.url = url or {}
         self.sessions = sessions or {}

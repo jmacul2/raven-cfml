@@ -371,6 +371,10 @@
 	        <!--- Wrap all query data into an object --->
 	        <cfreturn "{" & dJSONString.toString() & "}">
 	    
+	    <!--- FUNCTION --->
+	    <cfelseif listFindNoCase(StructKeyList(getFunctionList()), _data) OR isDefined(_data) AND evaluate("IsCustomFunction(#_data#)")>
+	    	<cfreturn '"' & "function()" & '"'>
+			
 	    <!--- UNKNOWN OBJECT TYPE --->
 	    <cfelse>
 	        <cfreturn '"' & "unknown-obj" & '"'>
