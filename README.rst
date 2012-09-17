@@ -1,7 +1,7 @@
 raven-cfml
 ==========
 
-raven-cfml is an experimental CFML client for `Sentry <https://www.getsentry.com/welcome/>`_.
+raven-cfml is a CFML client for `Sentry <https://www.getsentry.com/welcome/>`_.
 
 Installation
 ------------
