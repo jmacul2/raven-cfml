@@ -10,16 +10,16 @@ class CFMLHttp(Interface):
     # methods as defined by http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
     METHODS = ('GET', 'POST', 'PUT', 'OPTIONS', 'HEAD', 'DELETE', 'TRACE', 'CONNECT')
 
-    def __init__(self, url_path, method=None, form=None, url=None, query_string=None, cookies=None, 
+    def __init__(self, url_path, method=None, form=None, url=None, query_string=None, cookies=None,
                 sessions=None, application=None, headers=None, cgi=None, **kwargs):
 
         urlparts = urlparse.urlsplit(url_path)
         self.url_path = '%s://%s%s' % (urlparts.scheme, urlparts.netloc, urlparts.path)
-        
+
         if method:
             self.method = method.upper()
             assert method in self.METHODS
-        
+
         self.form = form or {}
         self.query_string = cgi.get('QUERY_STRING', '')
         self.application = application or {}

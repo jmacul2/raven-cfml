@@ -1,5 +1,5 @@
 <cfcomponent displayname="sentry" output="false">
-	
+
 	<cffunction name="init" output="false">
 		<cfargument name="publicKey" type="string" required="true">
 		<cfargument name="privateKey" type="string" required="true">
@@ -10,7 +10,7 @@
 		<cfargument name="cgiVars" type="any" default="#CGI#">
 		<cfargument name="httpRequestData" type="any" default="#getHttpRequestData()#">
 		<cfargument name="customHttpInterface" type="string" default="" hint="The path to a custom Http interface.">
-		
+
 		<cfset this.ravenCFMLVersion = '0.1'>
 		<cfset this.sentryVersion = '2.0'>
 		<cfset this.errorList = '10,20,30,40,50'>
@@ -23,44 +23,44 @@
 		<cfset this.cgiVars = arguments.cgiVars>
 		<cfset this.httpRequestData = arguments.httpRequestData>
 		<cfset this.customHttpInterface = arguments.customHttpInterface>
-		
+
 		<cfreturn this>
 	</cffunction>
-	
-	
+
+
 	<cffunction name="captureMessage" output="false" returntype="any">
 		<cfargument name="message" type="string" required="true">
 		<cfargument name="errorType" type="numeric" default="30">
 		<cfargument name="params" type="any" default="">
-		
+
 		<cfset var sentryMessage = structNew()>
-		
+
 		<cfif listContains(this.errorList, arguments.errorType) EQ 0>
 			<cfthrow message="Error Type must be one of the following: [#this.errorList#]">
 		</cfif>
-		
+
 		<cfscript>
 			sentryMessage['message'] = arguments.message;
 			sentryMessage['level'] = arguments.errorType;
-			
+
 			sentryMessage['sentry.interfaces.Message'] = structNew();
 			sentryMessage['sentry.interfaces.Message']['message'] = '#arguments.message#';
 			if(isArray(arguments.params)) {
 				sentryMessage['sentry.interfaces.Message']['params'] = arguments.params;
 			}
-		
+
 			capture(sentryMessage);
 		</cfscript>
 	</cffunction>
-	
-	
+
+
 	<cffunction name="captureException" output="false" returntype="any">
 		<cfargument name="exception" type="any" required="true">
 		<cfargument name="errorType" type="numeric" default="40">
 		<cfargument name="oneLineStackTrace" type="boolean" default="false" hint="Set to true for improved performance. This will disable the full trace.">
 		<cfargument name="showJavaStackTrace" type="boolean" default="false">
 		<cfargument name="locals" type="any" default="" hint="A struct of local variables you might want to pas to be included in the stacktrace.">
-		
+
 		<cfscript>
 			var sentryException = structNew();
 			var file = '';
@@ -77,24 +77,24 @@
 			sentryException['message'] = '#exception.type# Error: #exception.message# #exception.detail#';
 			sentryException['level'] = arguments.errorType;
 			sentryException['culprit'] = exception.message;
-			
+
 			if (arguments.showJavaStackTrace) {
 				sentryException['extra'] = structNew();
 				sentryException['extra']['Java StackTrace'] = listToArray(replace(exception['StackTrace'], chr(9), "", "All"), chr(10));
 			}
-			
+
 			sentryException['sentry.interfaces.Exception'] = structNew();
 			sentryException['sentry.interfaces.Exception']['value'] = '#exception.message# #exception.detail#';
 			sentryException['sentry.interfaces.Exception']['type'] = '#exception.type# Error';
 			//sentryException['sentry.interfaces.Exception']['module'] = '__builtin__';
-			
+
 			if (arguments.oneLineStackTrace) {
 				exception['TagContext'] = exception['TagContext'][1];
 			}
-			
+
 			sentryException['sentry.interfaces.Stacktrace'] = structNew();
 			sentryException['sentry.interfaces.Stacktrace']['frames'] = arrayNew(1);
-				
+
 			for (i=1; i LTE arrayLen(exception['TagContext']); i=i+1) {
 				if (exception['TagContext'][i]['TEMPLATE'] NEQ currentTemplate) {
 					fileArray = arrayNew(1);
@@ -105,7 +105,7 @@
 					fileClose(file);
 					currentTemplate = exception['TagContext'][i]['TEMPLATE'];
 				}
-				
+
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i] = structNew();
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i]['abs_path'] = exception['TagContext'][i]['TEMPLATE'];
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i]['filename'] = exception['TagContext'][i]['TEMPLATE'];
@@ -124,7 +124,7 @@
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'] = arrayNew(1);
 				if (arrayLen(fileArray) GTE exception['TagContext'][i]['LINE']+1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'][1] = fileArray[exception['TagContext'][i]['LINE']+1]; }
 				if (arrayLen(fileArray) GTE exception['TagContext'][i]['LINE']+2) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'][2] = fileArray[exception['TagContext'][i]['LINE']+2]; }
-				
+
 				if (i == 1 and isStruct(arguments.locals)) {
 					sentryException['sentry.interfaces.Stacktrace']['frames'][i]['vars'] = structNew();
 					for (j IN locals) {
@@ -132,15 +132,16 @@
 					}
 				}
 			}
-				
+
 			capture(sentryException);
 		</cfscript>
 	</cffunction>
-	
-	
+
+
 	<cffunction name="capture" returntype="void" output="false">
 		<cfargument name="captureStruct" type="any" required="true">
-		
+		<cfargument name="useSigniture" type="boolean" default="false">
+
 		<cfscript>
 			var captureStuct = arguments.captureStruct;
 			var jsonCapture = '';
@@ -148,20 +149,20 @@
 			var header = '';
 			var timeVars = getTimeVars();
 			var appStruct = structNew();
-			
+
 			// Add global metadata
 			captureStuct['event_id'] = lcase(replace(createUUID(), '-', '', 'all'));
 			captureStuct['timestamp'] = timeVars.timeStamp;
 			captureStuct['logger'] = this.logger;
 			captureStuct['project'] = this.projectID;
 			captureStuct['server_name'] = this.serverName;
-			
+
 			// Custom Interface for Coldfusion
 			if (this.customHttpInterface NEQ "") {
 				for (i in application) {
 					if(NOT isStruct(application[i])){
 						structInsert(appStruct, i, application[i]);
-					}	
+					}
 					else {
 						structInsert(appStruct, i, "struct(#structCount(application[i])#)");
 					}
@@ -192,19 +193,24 @@
 				}
 				captureStuct['sentry.interfaces.Http']['env'] = this.cgiVars;
 			}
-			
+
 			jsonCapture = jsonEncode(captureStruct);
 			signiture = hmac_sha1(this.privateKey, '#timeVars.time# #jsonCapture#');
-			header = "Sentry sentry_version=#this.sentryVersion#, sentry_signature=#signiture#, sentry_timestamp=#timeVars.time#, sentry_key=#this.publicKey#, sentry_client=raven-cfml/#this.ravenCFMLVersion#";
+			if arguments.useSigniture {
+				header = "Sentry sentry_version=#this.sentryVersion#, sentry_signature=#signiture#, sentry_timestamp=#timeVars.time#, sentry_key=#this.publicKey#, sentry_client=raven-cfml/#this.ravenCFMLVersion#";
+			}
+			else {
+				header = "Sentry sentry_version=#this.sentryVersion#, sentry_timestamp=#timeVars.time#, sentry_key=#this.publicKey#, sentry_client=raven-cfml/#this.ravenCFMLVersion#";
+			}
 		</cfscript>
-		
+
 		<cfhttp url="#this.sentryUrl#/api/store/" method="post" timeout="2">
 			<cfhttpparam type="header" name="X-Sentry-Auth" value="#header#">
 			<cfhttpparam type="body" value="#jsonCapture#">
 		</cfhttp>
 	</cffunction>
-	
-	
+
+
 	<cffunction name="getTimeVars" returntype="struct" output="false">
 		<cfscript>
 			var timeVars = structNew();
@@ -212,19 +218,19 @@
 			timeVars.utcNowTime = dateConvert("Local2UTC",timeVars.time);
 			timeVars.timeStamp = '#dateformat(timeVars.utcNowTime, "yyyy-mm-dd")#T#timeFormat(timeVars.utcNowTime, "HH:mm:ss")#';
 		</cfscript>
-	
+
 		<cfreturn timeVars>
 	</cffunction>
-	
-	
-	<cffunction name="jsonEncode" returntype="string" output="false" hint="Converts data from CF to JSON format the proper way, serializeJSON is crap.">
+
+
+	<cffunction name="jsonEncode" returntype="string" output="false" hint="Converts data from CF to JSON format the proper way, serializeJSON is crap in CF.">
 	    <cfargument name="data" type="any" required="Yes">
 	    <cfargument name="queryFormat" type="string" required="false" default="query">
 	    <cfargument name="queryKeyCase" type="string" required="false" default="lower">
 	    <cfargument name="stringNumbers" type="boolean" required="false" default="false">
 	    <cfargument name="formatDates" type="boolean" required="false" default="false">
 	    <cfargument name="columnListFormat" type="string" required="false" default="string">
-		    
+
 	    <cfset var jsonString = "">
 	    <cfset var tempVal = "">
 	    <cfset var arKeys = "">
@@ -239,23 +245,23 @@
 	    <cfset var escapeToVals = "\\,\"",\/,\b,\t,\n,\f,\r">
 	    <cfset var escapeVals = "\,"",/,#Chr(8)#,#Chr(9)#,#Chr(10)#,#Chr(12)#,#Chr(13)#">
 		<cfset var _data = arguments.data>
-		
+
 	    <!--- BOOLEAN --->
 	    <cfif IsBoolean(_data) AND NOT IsNumeric(_data) AND NOT ListFindNoCase("Yes,No", _data)>
 	        <cfreturn LCase(ToString(_data))>
-	        
+
 	    <!--- NUMBER --->
 	    <cfelseif NOT stringNumbers AND IsNumeric(_data) AND NOT REFind("^0+[^\.]",_data)>
 	        <cfreturn ToString(_data)>
-	    
+
 	    <!--- DATE --->
 	    <cfelseif IsDate(_data) AND arguments.formatDates>
 	        <cfreturn '"#DateFormat(_data, "medium")# #TimeFormat(_data, "medium")#"'>
-	    
+
 	    <!--- STRING --->
 	    <cfelseif IsSimpleValue(_data)>
 	        <cfreturn '"' & ReplaceList(_data, escapeVals, escapeToVals) & '"'>
-	    
+
 	    <!--- ARRAY --->
 	    <cfelseif IsArray(_data)>
 	        <cfset dJSONString = createObject('java','java.lang.StringBuffer').init("")>
@@ -267,9 +273,9 @@
 	                <cfset dJSONString.append("," & tempVal)>
 	            </cfif>
 	        </cfloop>
-	        
+
 	        <cfreturn "[" & dJSONString.toString() & "]">
-	    
+
 	    <!--- STRUCT --->
 	    <cfelseif IsStruct(_data)>
 	        <cfset dJSONString = createObject('java','java.lang.StringBuffer').init("")>
@@ -282,13 +288,13 @@
 	                <cfset dJSONString.append("," & '"' & arKeys[i] & '":' & tempVal)>
 	            </cfif>
 	        </cfloop>
-	        
+
 	        <cfreturn "{" & dJSONString.toString() & "}">
-	    
+
 	    <!--- QUERY --->
 	    <cfelseif IsQuery(_data)>
 	        <cfset dJSONString = createObject('java','java.lang.StringBuffer').init("")>
-	        
+
 	        <!--- Add query meta data --->
 	        <cfif arguments.queryKeyCase EQ "lower">
 	            <cfset recordcountKey = "recordcount">
@@ -301,7 +307,7 @@
 	            <cfset columnlist = _data.columnlist>
 	            <cfset dataKey = "data">
 	        </cfif>
-	        
+
 	        <cfset dJSONString.append('"#recordcountKey#":' & _data.recordcount)>
 	        <cfif arguments.columnListFormat EQ "array">
 	            <cfset columnlist = "[" & ListQualify(columnlist, '"') & "]">
@@ -310,12 +316,12 @@
 	            <cfset dJSONString.append(',"#columnlistKey#":"' & columnlist & '"')>
 	        </cfif>
 	        <cfset dJSONString.append(',"#dataKey#":')>
-	        
+
 	        <!--- Make query a structure of arrays --->
 	        <cfif arguments.queryFormat EQ "query">
 	            <cfset dJSONString.append("{")>
 	            <cfset colPos = 1>
-	            
+
 	            <cfloop list="#_data.columnlist#" delimiters="," index="column">
 	                <cfif colPos GT 1>
 	                    <cfset dJSONString.append(",")>
@@ -324,19 +330,19 @@
 	                    <cfset column = LCase(column)>
 	                </cfif>
 	                <cfset dJSONString.append('"' & column & '":[')>
-	                
+
 	                <cfloop from="1" to="#_data.recordcount#" index="i">
 	                    <!--- Get cell value; recurse to get proper format depending on string/number/boolean data type --->
 	                    <cfset tempVal = jsonencode( _data[column][i], arguments.queryFormat, arguments.queryKeyCase, arguments.stringNumbers, arguments.formatDates, arguments.columnListFormat )>
-	                    
+
 	                    <cfif i GT 1>
 	                        <cfset dJSONString.append(",")>
 	                    </cfif>
 	                    <cfset dJSONString.append(tempVal)>
 	                </cfloop>
-	                
+
 	                <cfset dJSONString.append("]")>
-                
+
                 <cfset colPos = colPos + 1>
             </cfloop>
             <cfset dJSONString.append("}")>
@@ -351,54 +357,54 @@
 	                <cfset colPos = 1>
 	                <cfloop list="#columnlist#" delimiters="," index="column">
 	                    <cfset tempVal = jsonencode( _data[column][CurrentRow], arguments.queryFormat, arguments.queryKeyCase, arguments.stringNumbers, arguments.formatDates, arguments.columnListFormat )>
-	                    
+
 	                    <cfif colPos GT 1>
 	                        <cfset dJSONString.append(",")>
 	                    </cfif>
-	                    
+
 	                    <cfif arguments.queryKeyCase EQ "lower">
 	                        <cfset column = LCase(column)>
 	                    </cfif>
 	                    <cfset dJSONString.append('"' & column & '":' & tempVal)>
-	                    
+
 	                    <cfset colPos = colPos + 1>
 	                </cfloop>
 	                <cfset dJSONString.append("}")>
 	            </cfloop>
 	            <cfset dJSONString.append("]")>
 	        </cfif>
-        
+
 	        <!--- Wrap all query data into an object --->
 	        <cfreturn "{" & dJSONString.toString() & "}">
-	    
+
 	    <!--- FUNCTION --->
 	    <cfelseif listFindNoCase(StructKeyList(getFunctionList()), _data) OR isDefined(_data) AND evaluate("IsCustomFunction(#_data#)")>
 	    	<cfreturn '"' & "function()" & '"'>
-			
+
 	    <!--- UNKNOWN OBJECT TYPE --->
 	    <cfelse>
 	        <cfreturn '"' & "unknown-obj" & '"'>
 	    </cfif>
 	</cffunction>
-	
-	
+
+
 	<cffunction name="hmac_sha1" returntype="string" output="false" hint="HMAC SHA1 signing function.">
 	   <cfargument name="signKey" type="string" required="true">
 	   <cfargument name="signMessage" type="string" required="true">
-	
+
 	   <cfset var jMsg = JavaCast("string",arguments.signMessage).getBytes("iso-8859-1")>
 	   <cfset var jKey = JavaCast("string",arguments.signKey).getBytes("iso-8859-1")>
-	
+
 	   <cfset var key = createObject("java","javax.crypto.spec.SecretKeySpec")>
 	   <cfset var mac = createObject("java","javax.crypto.Mac")>
-	
+
 	   <cfset key = key.init(jKey,"HmacSHA1")>
-	
+
 	   <cfset mac = mac.getInstance(key.getAlgorithm())>
 	   <cfset mac.init(key)>
 	   <cfset mac.update(jMsg)>
-	
+
 	   <cfreturn lcase(binaryEncode(mac.doFinal(), 'hex'))>
 	</cffunction>
-	
+
 </cfcomponent>

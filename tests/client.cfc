@@ -27,7 +27,7 @@
 		<cfset var resultArray = arrayNew(1)>
 		<cfset var result = ''>
 		<cfset resultArray[1] = 3>
-		<cfset resultArray[2] = 'foobar'>	
+		<cfset resultArray[2] = 'foobar'>
 		<cfset var result = ravenCFC.jsonEncode(resultArray)>
 		<cfset assertEquals('[3,"foobar"]', result)>
 	</cffunction>
