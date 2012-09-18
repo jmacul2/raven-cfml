@@ -92,7 +92,7 @@ call to sentry for performance.
 Using the sentry-cfml plugin in Sentry
 --------------------------------------
 
-There is a plugin for sentry `sentry-cfml <https://github.com/jmacul2/sentry-cfml>`_ that includes
+There is a plugin for sentry (`sentry-cfml <https://github.com/jmacul2/sentry-cfml>`_) that includes
 a custom interface so that raven-cfml can send CFML specific variables.
 
 Once installed, you can reference it using
