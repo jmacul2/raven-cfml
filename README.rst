@@ -37,9 +37,9 @@ Using Application.cfc
    <cffunction name="OnError" access="public" returntype="void" output="false">
       <cfargument name="exception" type="any" required="true">
       <cfargument name="eventName" type="string" required="false" default="">
-   
+
       <cfset ravenClient.captureException(exception)>
-   
+
    </cffunction>
 
 
@@ -54,13 +54,13 @@ Inside a CFML Page
       <cfcatch>
          <!--- Capture a exception --->
          <cfset ravenClient.captureException(cfcatch)>
-      
+
          <!--- Capture a message --->
          <cfset ravenClient.captureMessage("This is a message.")>
       </cfcatch>
    </cftry>
-   
-Explore the client.cfc library for all available arguments.   
+
+Explore the client.cfc library for all available arguments.
 
 Threading
 ~~~~~~~~~
@@ -83,41 +83,28 @@ call to sentry for performance.
             <cfset ravenConfig.cgiVars = cgiVars>
             <cfset ravenConfig.httpRequestData = httpRequestData>
             <cfset ravenClient = createObject('component', '[path.to.raven].lib.client').init(argumentCollection=ravenConfig)>
-                  
+
             <cfset ravenClient.captureException(cfcatch)>
          </cfthread>
       </cfcatch>
    </cftry>
 
-Using the CFML Custom Interface in Sentry
------------------------------------------
+Using the sentry-cfml plugin in Sentry
+--------------------------------------
 
-Included is a custom sentry interface which can be added to sentry to allow for 
-CFML sentric variable scopes in sentry logs.  (ie: application, form, url etc)
+There is a plugin for sentry `sentry-cfml <https://github.com/jmacul2/sentry-cfml>_` that includes
+a custom interface so that raven-cfml can send CFML specific variables.
 
-Installation
-~~~~~~~~~~~~
-
-1. Add cfmlsentry to the installed django apps:
-
-::
-
-   INSTALLED_APPS = (
-      ...
-      'cfmlsentry'
-      ...
-   )
-   
-2. Reference the interface in the init of the raven client:
+Once installed, you can reference it using
 
 ::
 
    <cfset ravenConfig = structNew()>
    ...
-   <cfset ravenConfig.customHttpInterface = 'cfmlsentry.interfaces.CFMLHttp'>
+   <cfset ravenConfig.customHttpInterface = 'sentry_cfml.interfaces.CFMLHttp'>
    ...
    <cfset ravenClient = createObject('component', '[path.to.raven].lib.client').init(argumentCollection=ravenConfig)>
-                  
+
 Resources
 ---------
 
