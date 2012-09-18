@@ -181,18 +181,17 @@
 				captureStuct[this.customHttpInterface]['application'] = appStruct;
 				captureStuct[this.customHttpInterface]['cgi'] = this.cgiVars;
 			}
-			else {
-				captureStuct['sentry.interfaces.Http'] = structNew();
-				captureStuct['sentry.interfaces.Http']['url'] = 'http://' & this.cgiVars.SERVER_NAME & this.cgiVars.SCRIPT_NAME;
-				captureStuct['sentry.interfaces.Http']['method'] = this.cgiVars.REQUEST_METHOD;
-				captureStuct['sentry.interfaces.Http']['data'] = FORM;
-				captureStuct['sentry.interfaces.Http']['query_string'] = this.cgiVars.QUERY_STRING;
-				captureStuct['sentry.interfaces.Http']['cookies'] = COOKIE;
-				if (isStruct(this.httpRequestData) AND structKeyExists(this.httpRequestData, 'headers')) {
-					captureStuct['sentry.interfaces.Http']['headers'] = this.httpRequestData.headers;
-				}
-				captureStuct['sentry.interfaces.Http']['env'] = this.cgiVars;
+			
+			captureStuct['sentry.interfaces.Http'] = structNew();
+			captureStuct['sentry.interfaces.Http']['url'] = 'http://' & this.cgiVars.SERVER_NAME & this.cgiVars.SCRIPT_NAME;
+			captureStuct['sentry.interfaces.Http']['method'] = this.cgiVars.REQUEST_METHOD;
+			captureStuct['sentry.interfaces.Http']['data'] = FORM;
+			captureStuct['sentry.interfaces.Http']['query_string'] = this.cgiVars.QUERY_STRING;
+			captureStuct['sentry.interfaces.Http']['cookies'] = COOKIE;
+			if (isStruct(this.httpRequestData) AND structKeyExists(this.httpRequestData, 'headers')) {
+				captureStuct['sentry.interfaces.Http']['headers'] = this.httpRequestData.headers;
 			}
+			captureStuct['sentry.interfaces.Http']['env'] = this.cgiVars;
 
 			jsonCapture = jsonEncode(captureStruct);
 			signiture = hmac_sha1(this.privateKey, '#timeVars.time# #jsonCapture#');
