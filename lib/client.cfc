@@ -195,7 +195,7 @@
 
 			jsonCapture = jsonEncode(captureStruct);
 			signiture = hmac_sha1(this.privateKey, '#timeVars.time# #jsonCapture#');
-			if arguments.useSigniture {
+			if (arguments.useSigniture) {
 				header = "Sentry sentry_version=#this.sentryVersion#, sentry_signature=#signiture#, sentry_timestamp=#timeVars.time#, sentry_key=#this.publicKey#, sentry_client=raven-cfml/#this.ravenCFMLVersion#";
 			}
 			else {
