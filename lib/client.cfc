@@ -217,8 +217,9 @@
 	<cffunction name="getTimeVars" returntype="struct" output="false">
 		<cfscript>
 			var timeVars = structNew();
-			timeVars.time = now().getTime();
-			timeVars.utcNowTime = dateConvert("Local2UTC",now());
+			var time = now();
+			timeVars.time = time.getTime();
+			timeVars.utcNowTime = dateConvert("Local2UTC", time);
 			timeVars.timeStamp = '#dateformat(timeVars.utcNowTime, "yyyy-mm-dd")#T#timeFormat(timeVars.utcNowTime, "HH:mm:ss")#';
 		</cfscript>
 
