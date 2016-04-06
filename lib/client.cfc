@@ -101,8 +101,8 @@
 					if (fileExists(exception['TagContext'][i]['TEMPLATE'])) {
 						file = fileOpen(exception['TagContext'][i]['TEMPLATE'], "read");
 						while (!fileIsEOF(file)) {
-				            arrayAppend(fileArray, fileReadLine(file));
-				        }
+							arrayAppend(fileArray, fileReadLine(file));
+						}
 						fileClose(file);
 					}
 					currentTemplate = exception['TagContext'][i]['TEMPLATE'];
@@ -122,7 +122,9 @@
 				if (exception['TagContext'][i]['LINE']-3 GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['pre_context'][1] = fileArray[exception['TagContext'][i]['LINE']-3]; }
 				if (exception['TagContext'][i]['LINE']-2 GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['pre_context'][1] = fileArray[exception['TagContext'][i]['LINE']-2]; }
 				if (exception['TagContext'][i]['LINE']-1 GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['pre_context'][2] = fileArray[exception['TagContext'][i]['LINE']-1]; }
-				if (arrayLen(fileArray) GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['context_line'] = fileArray[exception['TagContext'][i]['LINE']]; }
+				if (arrayLen(fileArray)) {
+					sentryException['sentry.interfaces.Stacktrace']['frames'][i]['context_line'] = fileArray[exception['TagContext'][i]['LINE']];
+				}
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'] = arrayNew(1);
 				if (arrayLen(fileArray) GTE exception['TagContext'][i]['LINE']+1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'][1] = fileArray[exception['TagContext'][i]['LINE']+1]; }
 				if (arrayLen(fileArray) GTE exception['TagContext'][i]['LINE']+2) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'][2] = fileArray[exception['TagContext'][i]['LINE']+2]; }
