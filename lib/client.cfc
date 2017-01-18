@@ -60,6 +60,7 @@
 		<cfargument name="oneLineStackTrace" type="boolean" default="false" hint="Set to true for improved performance. This will disable the full trace.">
 		<cfargument name="showJavaStackTrace" type="boolean" default="false">
 		<cfargument name="locals" type="any" default="" hint="A struct of local variables you might want to pas to be included in the stacktrace.">
+		<cfargument name="additionalData" type="any">
 
 		<cfscript>
 			var sentryException = structNew();
@@ -78,9 +79,22 @@
 			sentryException['level'] = arguments.errorType;
 			sentryException['culprit'] = exception.message;
 
+			var sentryExceptionExtra = structNew();
 			if (arguments.showJavaStackTrace) {
-				sentryException['extra'] = structNew();
-				sentryException['extra']['Java StackTrace'] = listToArray(replace(exception['StackTrace'], chr(9), "", "All"), chr(10));
+				sentryExceptionExtra['Java StackTrace'] = listToArray(replace(exception['StackTrace'], chr(9), "", "All"), chr(10));
+			}
+
+				if (!isNull(arguments.additionalData)) {
+					if (!IsArray(arguments.additionalData)) {
+						arguments.additionalData = [arguments.additionalData];
+					}
+					if (arrayLen(arguments.additionalData)) {
+						sentryExceptionExtra['Additional Data'] = arguments.additionalData;
+					}
+				}
+
+			if (structCount(sentryExceptionExtra)) {
+				sentryException['extra'] = sentryExceptionExtra;
 			}
 
 			sentryException['sentry.interfaces.Exception'] = structNew();
