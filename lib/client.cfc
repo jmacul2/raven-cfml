@@ -1,31 +1,71 @@
 <cfcomponent displayname="sentry" output="false">
 
-	<cffunction name="init" output="false">
-		<cfargument name="publicKey" type="string" required="true">
-		<cfargument name="privateKey" type="string" required="true">
-		<cfargument name="projectID" type="numeric" required="true">
-		<cfargument name="sentryUrl" type="string" default="https://app.getsentry.com">
-		<cfargument name="logger" type="string" default="raven-cfml">
-		<cfargument name="serverName" type="string" default="#CGI.SERVER_NAME#">
-		<cfargument name="cgiVars" type="any" default="#CGI#">
-		<cfargument name="httpRequestData" type="any" default="#getHttpRequestData()#">
-		<cfargument name="customHttpInterface" type="string" default="" hint="The path to a custom Http interface.">
+	<cfscript>
+		/**
+			* @customHttpInterface The path to a custom Http interface.
+		*/
+		function init(
+			string DSN,
+			string publicKey,
+			string privateKey,
+			numeric projectID,
+			string sentryUrl = 'https://app.getsentry.com',
+			string logger = 'raven-cfml',
+			string serverName = CGI.SERVER_NAME,
+			any cgiVars = CGI,
+			any httpRequestData = getHttpRequestData(),
+			string customHttpInterface = ''
+		) {
+			if (!isNull(DSN) && len(DSN)) {
+				_parseDSN(DSN);
+			} else if (
+				!isNull(arguments.publicKey) &&
+				!isNull(arguments.privateKey) &&
+				!isNull(arguments.projectID)
+			) {
+				this.publicKey = arguments.publicKey;
+				this.privateKey = arguments.privateKey;
+				this.projectID = arguments.projectID;
+				this.sentryUrl = arguments.sentryUrl;
+			} else {
+				throw(message = "Missing client keys");
+			}
 
-		<cfset this.ravenCFMLVersion = '0.1'>
-		<cfset this.sentryVersion = '2.0'>
-		<cfset this.errorList = '10,20,30,40,50'>
-		<cfset this.publicKey = arguments.publicKey>
-		<cfset this.privateKey = arguments.privateKey>
-		<cfset this.projectID = arguments.projectID>
-		<cfset this.sentryUrl = arguments.sentryUrl>
-		<cfset this.logger = arguments.logger>
-		<cfset this.serverName = arguments.serverName>
-		<cfset this.cgiVars = arguments.cgiVars>
-		<cfset this.httpRequestData = arguments.httpRequestData>
-		<cfset this.customHttpInterface = arguments.customHttpInterface>
+			this.ravenCFMLVersion = '0.1.0';
+			this.sentryVersion = '2.0';
+			this.errorList = '10,20,30,40,50';
+			this.logger = arguments.logger;
+			this.serverName = arguments.serverName;
+			this.cgiVars = arguments.cgiVars;
+			this.httpRequestData = arguments.httpRequestData;
+			this.customHttpInterface = arguments.customHttpInterface;
 
-		<cfreturn this>
-	</cffunction>
+			return this;
+		}
+
+		private void function _parseDSN(required string DSN) {
+			var r = '^(?:(\w+):)?\/\/(\w+):(\w+)?@([\w\.-]+)\/(.*)';
+			var Pattern = createObject('java', 'java.util.regex.Pattern');
+			var p = Pattern.compile(r);
+			var m = p.matcher(DSN);
+			var res = [];
+			if(m.find()) {
+					var i = 1;
+					while(i <= m.groupCount()) {
+						res.add(m.group(i));
+						i++;
+					}
+			}
+			if (arrayLen(res) != 5) {
+				throw(message = 'Error parsing DSN');
+			}
+
+			this.publicKey = res[2];
+			this.privateKey = res[3];
+			this.projectID = res[5];
+			this.sentryUrl = res[1] & '://' & res[4];
+		}
+	</cfscript>
 
 
 	<cffunction name="captureMessage" output="false" returntype="any">
