@@ -13,7 +13,7 @@ To install the source code:
 
 ::
 
-    $ git clone git://github.com/jmacul2/raven-cfml.git
+    $ git clone git://github.com/iGLOO-be/raven-cfml.git
 
 And instantiate the object:
 
@@ -104,9 +104,3 @@ Once installed, you can reference it using
    <cfset ravenConfig.customHttpInterface = 'sentry_cfml.interfaces.CFMLHttp'>
    ...
    <cfset ravenClient = createObject('component', '[path.to.raven].lib.client').init(argumentCollection=ravenConfig)>
-
-Resources
----------
-
-* `Bug Tracker <http://github.com/jmacul2/raven-cfml/issues>`_
-* `Code <http://github.com/jmacul2/raven-cfml>`_
