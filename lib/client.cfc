@@ -265,7 +265,12 @@
 	    <cfelseif IsArray(_data)>
 	        <cfset dJSONString = createObject('java','java.lang.StringBuffer').init("")>
 	        <cfloop from="1" to="#ArrayLen(_data)#" index="i">
-	            <cfset tempVal = jsonencode( _data[i], arguments.queryFormat, arguments.queryKeyCase, arguments.stringNumbers, arguments.formatDates, arguments.columnListFormat )>
+	            <cfif ArrayIsDefined(_data,i)>
+	                <cfset tempVal = jsonencode( _data[i], arguments.queryFormat, arguments.queryKeyCase, arguments.stringNumbers, arguments.formatDates, arguments.columnListFormat )>
+	            <cfelse>
+	            	<cfset tempVal = jsonencode( "null", arguments.queryFormat, arguments.queryKeyCase, arguments.stringNumbers, arguments.formatDates, arguments.columnListFormat )>
+	            </cfif>
+	            
 	            <cfif dJSONString.toString() EQ "">
 	                <cfset dJSONString.append(tempVal)>
 	            <cfelse>
