@@ -1,31 +1,71 @@
 <cfcomponent displayname="sentry" output="false">
 
-	<cffunction name="init" output="false">
-		<cfargument name="publicKey" type="string" required="true">
-		<cfargument name="privateKey" type="string" required="true">
-		<cfargument name="projectID" type="numeric" required="true">
-		<cfargument name="sentryUrl" type="string" default="https://app.getsentry.com">
-		<cfargument name="logger" type="string" default="raven-cfml">
-		<cfargument name="serverName" type="string" default="#CGI.SERVER_NAME#">
-		<cfargument name="cgiVars" type="any" default="#CGI#">
-		<cfargument name="httpRequestData" type="any" default="#getHttpRequestData()#">
-		<cfargument name="customHttpInterface" type="string" default="" hint="The path to a custom Http interface.">
+	<cfscript>
+		/**
+			* @customHttpInterface The path to a custom Http interface.
+		*/
+		function init(
+			string DSN,
+			string publicKey,
+			string privateKey,
+			numeric projectID,
+			string sentryUrl = 'https://app.getsentry.com',
+			string logger = 'raven-cfml',
+			string serverName = CGI.SERVER_NAME,
+			any cgiVars = CGI,
+			any httpRequestData = getHttpRequestData(),
+			string customHttpInterface = ''
+		) {
+			if (!isNull(DSN) && len(DSN)) {
+				_parseDSN(DSN);
+			} else if (
+				!isNull(arguments.publicKey) &&
+				!isNull(arguments.privateKey) &&
+				!isNull(arguments.projectID)
+			) {
+				this.publicKey = arguments.publicKey;
+				this.privateKey = arguments.privateKey;
+				this.projectID = arguments.projectID;
+				this.sentryUrl = arguments.sentryUrl;
+			} else {
+				throw(message = "Missing client keys");
+			}
 
-		<cfset this.ravenCFMLVersion = '0.1'>
-		<cfset this.sentryVersion = '2.0'>
-		<cfset this.errorList = '10,20,30,40,50'>
-		<cfset this.publicKey = arguments.publicKey>
-		<cfset this.privateKey = arguments.privateKey>
-		<cfset this.projectID = arguments.projectID>
-		<cfset this.sentryUrl = arguments.sentryUrl>
-		<cfset this.logger = arguments.logger>
-		<cfset this.serverName = arguments.serverName>
-		<cfset this.cgiVars = arguments.cgiVars>
-		<cfset this.httpRequestData = arguments.httpRequestData>
-		<cfset this.customHttpInterface = arguments.customHttpInterface>
+			this.ravenCFMLVersion = '0.1.0';
+			this.sentryVersion = '2.0';
+			this.errorList = '10,20,30,40,50';
+			this.logger = arguments.logger;
+			this.serverName = arguments.serverName;
+			this.cgiVars = arguments.cgiVars;
+			this.httpRequestData = arguments.httpRequestData;
+			this.customHttpInterface = arguments.customHttpInterface;
 
-		<cfreturn this>
-	</cffunction>
+			return this;
+		}
+
+		private void function _parseDSN(required string DSN) {
+			var r = '^(?:(\w+):)?\/\/(\w+):(\w+)?@([\w\.-]+)\/(.*)';
+			var Pattern = createObject('java', 'java.util.regex.Pattern');
+			var p = Pattern.compile(r);
+			var m = p.matcher(DSN);
+			var res = [];
+			if(m.find()) {
+					var i = 1;
+					while(i <= m.groupCount()) {
+						res.add(m.group(i));
+						i++;
+					}
+			}
+			if (arrayLen(res) != 5) {
+				throw(message = 'Error parsing DSN');
+			}
+
+			this.publicKey = res[2];
+			this.privateKey = res[3];
+			this.projectID = res[5];
+			this.sentryUrl = res[1] & '://' & res[4];
+		}
+	</cfscript>
 
 
 	<cffunction name="captureMessage" output="false" returntype="any">
@@ -60,6 +100,7 @@
 		<cfargument name="oneLineStackTrace" type="boolean" default="false" hint="Set to true for improved performance. This will disable the full trace.">
 		<cfargument name="showJavaStackTrace" type="boolean" default="false">
 		<cfargument name="locals" type="any" default="" hint="A struct of local variables you might want to pas to be included in the stacktrace.">
+		<cfargument name="additionalData" type="any">
 
 		<cfscript>
 			var sentryException = structNew();
@@ -78,9 +119,22 @@
 			sentryException['level'] = arguments.errorType;
 			sentryException['culprit'] = exception.message;
 
+			var sentryExceptionExtra = structNew();
 			if (arguments.showJavaStackTrace) {
-				sentryException['extra'] = structNew();
-				sentryException['extra']['Java StackTrace'] = listToArray(replace(exception['StackTrace'], chr(9), "", "All"), chr(10));
+				sentryExceptionExtra['Java StackTrace'] = listToArray(replace(exception['StackTrace'], chr(9), "", "All"), chr(10));
+			}
+
+				if (!isNull(arguments.additionalData)) {
+					if (!IsArray(arguments.additionalData)) {
+						arguments.additionalData = [arguments.additionalData];
+					}
+					if (arrayLen(arguments.additionalData)) {
+						sentryExceptionExtra['Additional Data'] = arguments.additionalData;
+					}
+				}
+
+			if (structCount(sentryExceptionExtra)) {
+				sentryException['extra'] = sentryExceptionExtra;
 			}
 
 			sentryException['sentry.interfaces.Exception'] = structNew();
@@ -101,8 +155,8 @@
 					if (fileExists(exception['TagContext'][i]['TEMPLATE'])) {
 						file = fileOpen(exception['TagContext'][i]['TEMPLATE'], "read");
 						while (!fileIsEOF(file)) {
-				            arrayAppend(fileArray, fileReadLine(file));
-				        }
+							arrayAppend(fileArray, fileReadLine(file));
+						}
 						fileClose(file);
 					}
 					currentTemplate = exception['TagContext'][i]['TEMPLATE'];
@@ -122,7 +176,9 @@
 				if (exception['TagContext'][i]['LINE']-3 GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['pre_context'][1] = fileArray[exception['TagContext'][i]['LINE']-3]; }
 				if (exception['TagContext'][i]['LINE']-2 GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['pre_context'][1] = fileArray[exception['TagContext'][i]['LINE']-2]; }
 				if (exception['TagContext'][i]['LINE']-1 GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['pre_context'][2] = fileArray[exception['TagContext'][i]['LINE']-1]; }
-				if (arrayLen(fileArray) GTE 1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['context_line'] = fileArray[exception['TagContext'][i]['LINE']]; }
+				if (arrayLen(fileArray)) {
+					sentryException['sentry.interfaces.Stacktrace']['frames'][i]['context_line'] = fileArray[exception['TagContext'][i]['LINE']];
+				}
 				sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'] = arrayNew(1);
 				if (arrayLen(fileArray) GTE exception['TagContext'][i]['LINE']+1) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'][1] = fileArray[exception['TagContext'][i]['LINE']+1]; }
 				if (arrayLen(fileArray) GTE exception['TagContext'][i]['LINE']+2) { sentryException['sentry.interfaces.Stacktrace']['frames'][i]['post_context'][2] = fileArray[exception['TagContext'][i]['LINE']+2]; }
@@ -215,8 +271,9 @@
 	<cffunction name="getTimeVars" returntype="struct" output="false">
 		<cfscript>
 			var timeVars = structNew();
-			timeVars.time = now().getTime();
-			timeVars.utcNowTime = dateConvert("Local2UTC",timeVars.time);
+			var time = now();
+			timeVars.time = time.getTime();
+			timeVars.utcNowTime = dateConvert("Local2UTC", time);
 			timeVars.timeStamp = '#dateformat(timeVars.utcNowTime, "yyyy-mm-dd")#T#timeFormat(timeVars.utcNowTime, "HH:mm:ss")#';
 		</cfscript>
 
